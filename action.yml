@@ -1,9 +1,5 @@
 name: 'SPBuild'
 description: 'ScorePlay tooling for GoLang repositories'
-inputs:
-  go-mod-dir:
-    description: 'Path to the directory containing the go.mod file (defaults to repository root)'
-    required: false
 outputs:
   packages:
     description: 'List of modified packages'
@@ -12,5 +8,3 @@ outputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  args:
-    - {{ inputs.go-mod-dir }}
