@@ -1,15 +1,15 @@
-package dependencies
+package main
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
+	"os"
 	"os/exec"
 	"path"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 type jsonPackage struct {
@@ -18,25 +18,25 @@ type jsonPackage struct {
 	Deps       []string
 }
 
-func getServicesList(ctx context.Context, repoRoot string) (map[string]string, error) {
-	logger := logrus.New()
+func getServicesList(ctx context.Context, goModDir, goModuleName string) (map[string]string, error) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", "./...")
-	cmd.Dir = repoRoot
+	cmd.Dir = goModDir
 
 	stdOut, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("get go list stdout: %w", err)
+		return nil, fmt.Errorf("get go list stdout error: %w", err)
 	}
 
 	stdErr, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, fmt.Errorf("get go list stderr: %w", err)
+		return nil, fmt.Errorf("get go list stderr error: %w", err)
 	}
 
-	err = cmd.Start()
-	if err != nil {
+	if err := cmd.Start(); err != nil {
 		drainClose(logger, stdOut, stdErr)
-		return nil, fmt.Errorf("run go list: %w", err)
+		return nil, fmt.Errorf("cmd.Start: run go list: %w", err)
 	}
 
 	services := make(map[string]string)
@@ -52,25 +52,23 @@ func getServicesList(ctx context.Context, repoRoot string) (map[string]string, e
 		if pkg.Name != "main" {
 			continue
 		}
-		servicePath := strings.TrimPrefix(pkg.ImportPath, "github.com/ScorePlay-Inc/media-management")
+		servicePath := strings.TrimPrefix(pkg.ImportPath, goModuleName)
 		serviceName := path.Base(servicePath)
-		if serviceName != "revdeps" {
-			services[serviceName] = servicePath
-		}
+		services[serviceName] = path.Join(goModuleName, servicePath)
 	}
 
-	err = cmd.Wait()
-	if err != nil {
-		return nil, fmt.Errorf("run go list: %w", err)
+	if err := cmd.Wait(); err != nil {
+		return nil, fmt.Errorf("cmd.Wait:run go list: %w", err)
 	}
 	return services, nil
 }
 
 // getReverseDependencies gets all the executable (package main) dependencies of every package in the repo.
-func getReverseDependencies(ctx context.Context, repoRoot string, onlyServices bool) (map[string][]string, error) {
-	logger := logrus.New()
+func getReverseDependencies(ctx context.Context, goModDir string, onlyServices bool) (map[string][]string, error) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", "./...")
-	cmd.Dir = repoRoot
+	cmd.Dir = goModDir
 
 	stdOut, err := cmd.StdoutPipe()
 	if err != nil {
@@ -82,10 +80,9 @@ func getReverseDependencies(ctx context.Context, repoRoot string, onlyServices b
 		return nil, fmt.Errorf("get go list stderr: %w", err)
 	}
 
-	err = cmd.Start()
-	if err != nil {
+	if err := cmd.Start(); err != nil {
 		drainClose(logger, stdOut, stdErr)
-		return nil, fmt.Errorf("run go list: %w", err)
+		return nil, fmt.Errorf("cmd.Start: run go list: %w", err)
 	}
 
 	revDeps := map[string][]string{}
@@ -113,14 +110,13 @@ func getReverseDependencies(ctx context.Context, repoRoot string, onlyServices b
 		}
 	}
 
-	err = cmd.Wait()
-	if err != nil {
-		return nil, fmt.Errorf("run go list: %w", err)
+	if err := cmd.Wait(); err != nil {
+		return nil, fmt.Errorf("cmd.Wait: run go list: %w", err)
 	}
 	return revDeps, nil
 }
 
-func drainClose(logger *logrus.Logger, readers ...io.ReadCloser) {
+func drainClose(logger *slog.Logger, readers ...io.ReadCloser) {
 	for _, reader := range readers {
 		bts, err := io.ReadAll(reader)
 		if err != nil {

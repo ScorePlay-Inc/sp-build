@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 
 func initRootCommand(version string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "revdeps",
-		Short: "revdeps is a golang monorepo tool",
+		Use:   "sp-build",
+		Short: "sp-build is a golang monorepo tool",
 		Long:  `A Fast and Flexible golang monorepo tool`,
 	}
 

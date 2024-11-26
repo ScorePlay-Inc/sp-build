@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 func initVersionCommand(version string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "display jBuild version",
+		Short: "display sp-build version",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(version)
 		},

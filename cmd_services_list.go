@@ -1,31 +1,30 @@
-package cmd
+package main
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
-
-	"github.com/ScorePlay-Inc/media-management/tools/revdeps/internal/usecases/dependencies"
-	"github.com/ScorePlay-Inc/media-management/tools/revdeps/internal/utils"
 )
 
 func initServicesListCommand() *cobra.Command {
 	var displayJSON *bool
+	var goModDir *string
 
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "command to list all services in the monorepo",
 		Run: func(cmd *cobra.Command, args []string) {
-			services, err := dependencies.ServicesList(cmd.Context())
+			services, err := ServicesList(cmd.Context(), *goModDir)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			utils.DisplayMap(services, *displayJSON)
+			DisplayMap(services, *displayJSON)
 		},
 	}
 
+	goModDir = cmd.Flags().StringP("module", "m", ".", "path to the directory containing the go.mod file from repository root")
 	displayJSON = cmd.Flags().BoolP("json", "j", false, "display list as JSON")
 	return cmd
 }
