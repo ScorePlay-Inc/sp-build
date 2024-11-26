@@ -18,11 +18,10 @@ type jsonPackage struct {
 	Deps       []string
 }
 
-func getServicesList(ctx context.Context, goModDir, goModuleName string) (map[string]string, error) {
+func getServicesList(ctx context.Context, goModuleName string) (map[string]string, error) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", "./...")
-	cmd.Dir = goModDir
 
 	stdOut, err := cmd.StdoutPipe()
 	if err != nil {
@@ -64,11 +63,10 @@ func getServicesList(ctx context.Context, goModDir, goModuleName string) (map[st
 }
 
 // getReverseDependencies gets all the executable (package main) dependencies of every package in the repo.
-func getReverseDependencies(ctx context.Context, goModDir string, onlyServices bool) (map[string][]string, error) {
+func getReverseDependencies(ctx context.Context, onlyServices bool) (map[string][]string, error) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", "./...")
-	cmd.Dir = goModDir
 
 	stdOut, err := cmd.StdoutPipe()
 	if err != nil {

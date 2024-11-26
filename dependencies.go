@@ -9,9 +9,8 @@ import (
 	"strings"
 )
 
-func golangModuleName(ctx context.Context, goModDir string) (string, error) {
+func golangModuleName(ctx context.Context) (string, error) {
 	cmd := exec.CommandContext(ctx, "go", "mod", "edit", "--json")
-	cmd.Dir = goModDir
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -31,15 +30,15 @@ func golangModuleName(ctx context.Context, goModDir string) (string, error) {
 }
 
 func modifiedFilesSinceLastCommit(ctx context.Context) ([]string, error) {
-	modifiedFiles, err := exec.CommandContext(ctx, "git", "diff", "--name-only", "@^").Output()
+	modifiedFiles, err := exec.CommandContext(ctx, "git", "diff", "--relative", "--name-only", "@^").Output()
 	if err != nil {
 		return nil, fmt.Errorf("exec.Command error: %w", err)
 	}
 	return strings.Split(strings.TrimSpace(string(modifiedFiles)), "\n"), nil
 }
 
-func modifiedPackages(ctx context.Context, goModDir string, onlyServices bool) ([]string, error) {
-	moduleName, err := golangModuleName(ctx, goModDir)
+func modifiedPackages(ctx context.Context, onlyServices bool) ([]string, error) {
+	moduleName, err := golangModuleName(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("golangModuleName error %w", err)
 	}
@@ -49,43 +48,39 @@ func modifiedPackages(ctx context.Context, goModDir string, onlyServices bool) (
 		return nil, fmt.Errorf("modifiedFilesSinceLastCommit error %w", err)
 	}
 
-	revDeps, err := getReverseDependencies(ctx, goModDir, onlyServices)
+	revDeps, err := getReverseDependencies(ctx, onlyServices)
 	if err != nil {
 		return nil, fmt.Errorf("getReverseDependencies error %w", err)
 	}
 
-	toBuild := make(map[string]bool)
+	modified := make(map[string]bool)
 	for _, file := range modifiedFiles {
-		if strings.HasPrefix(file, "vendor/") {
-			file = strings.TrimPrefix(path.Dir(file), "vendor/")
-		} else {
-			file = path.Join(moduleName, path.Dir(file))
-		}
+		file = path.Join(moduleName, path.Dir(file))
 
 		for _, pkg := range revDeps[file] {
-			toBuild[pkg] = true
+			modified[pkg] = true
 		}
 	}
 
 	packageList := make([]string, 0)
-	for service := range toBuild {
-		serviceName := strings.TrimPrefix(service, moduleName)
-		if serviceName == "" {
+	for pkg := range modified {
+		pkgName := strings.TrimPrefix(pkg, moduleName)
+		if pkgName == "" {
 			continue
 		}
 
-		packageList = append(packageList, serviceName)
+		packageList = append(packageList, "."+pkgName)
 	}
 	return packageList, nil
 }
 
-func servicesList(ctx context.Context, goModDir string) (map[string]string, error) {
-	goModuleName, err := golangModuleName(ctx, goModDir)
+func servicesList(ctx context.Context) (map[string]string, error) {
+	goModuleName, err := golangModuleName(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("golangModuleName error %w", err)
 	}
 
-	services, err := getServicesList(ctx, goModDir, goModuleName)
+	services, err := getServicesList(ctx, goModuleName)
 	if err != nil {
 		return nil, fmt.Errorf("getServicesList error: %w", err)
 	}

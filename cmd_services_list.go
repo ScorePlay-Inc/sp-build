@@ -9,13 +9,12 @@ import (
 
 func initServicesListCommand() *cobra.Command {
 	var displayJSON *bool
-	var goModDir *string
 
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "command to list all services in the monorepo",
 		Run: func(cmd *cobra.Command, args []string) {
-			services, err := servicesList(cmd.Context(), *goModDir)
+			services, err := servicesList(cmd.Context())
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -24,7 +23,6 @@ func initServicesListCommand() *cobra.Command {
 		},
 	}
 
-	goModDir = cmd.Flags().StringP("module", "m", ".", "path to the directory containing the go.mod file from repository root")
 	displayJSON = cmd.Flags().BoolP("json", "j", false, "display list as JSON")
 	return cmd
 }
