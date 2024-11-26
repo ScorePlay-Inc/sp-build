@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
 	"os/exec"
 	"path"
 	"strings"
@@ -19,8 +18,6 @@ type jsonPackage struct {
 }
 
 func getServicesList(ctx context.Context, goModuleName string) (map[string]string, error) {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", "./...")
 
 	stdOut, err := cmd.StdoutPipe()
@@ -34,7 +31,7 @@ func getServicesList(ctx context.Context, goModuleName string) (map[string]strin
 	}
 
 	if err := cmd.Start(); err != nil {
-		drainClose(logger, stdOut, stdErr)
+		drainClose(stdOut, stdErr)
 		return nil, fmt.Errorf("cmd.Start: run go list: %w", err)
 	}
 
@@ -42,9 +39,9 @@ func getServicesList(ctx context.Context, goModuleName string) (map[string]strin
 	dec := json.NewDecoder(stdOut)
 	for dec.More() {
 		var pkg jsonPackage
-		err = dec.Decode(&pkg)
-		if err != nil {
-			drainClose(logger, stdOut, stdErr)
+
+		if err := dec.Decode(&pkg); err != nil {
+			drainClose(stdOut, stdErr)
 			return nil, fmt.Errorf("parse go list output: %w", err)
 		}
 
@@ -64,8 +61,6 @@ func getServicesList(ctx context.Context, goModuleName string) (map[string]strin
 
 // getReverseDependencies gets all the executable (package main) dependencies of every package in the repo.
 func getReverseDependencies(ctx context.Context, onlyServices bool) (map[string][]string, error) {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-
 	cmd := exec.CommandContext(ctx, "go", "list", "-json", "./...")
 
 	stdOut, err := cmd.StdoutPipe()
@@ -79,7 +74,7 @@ func getReverseDependencies(ctx context.Context, onlyServices bool) (map[string]
 	}
 
 	if err := cmd.Start(); err != nil {
-		drainClose(logger, stdOut, stdErr)
+		drainClose(stdOut, stdErr)
 		return nil, fmt.Errorf("cmd.Start: run go list: %w", err)
 	}
 
@@ -89,7 +84,7 @@ func getReverseDependencies(ctx context.Context, onlyServices bool) (map[string]
 		var pkg jsonPackage
 		err = dec.Decode(&pkg)
 		if err != nil {
-			drainClose(logger, stdOut, stdErr)
+			drainClose(stdOut, stdErr)
 			return nil, fmt.Errorf("parse go list output: %w", err)
 		}
 
@@ -114,14 +109,16 @@ func getReverseDependencies(ctx context.Context, onlyServices bool) (map[string]
 	return revDeps, nil
 }
 
-func drainClose(logger *slog.Logger, readers ...io.ReadCloser) {
-	for _, reader := range readers {
-		bts, err := io.ReadAll(reader)
-		if err != nil {
-			_ = reader.Close()
-			continue
-		}
-		logger.Info(string(bts))
-		_ = reader.Close()
+func drainClose(stdOut, stdErr io.ReadCloser) {
+	dataOut, _ := io.ReadAll(stdOut)
+	_ = stdOut.Close()
+	if len(dataOut) > 0 {
+		slog.Warn("stdout", "output", string(dataOut))
+	}
+
+	dataErr, _ := io.ReadAll(stdErr)
+	_ = stdErr.Close()
+	if len(dataErr) > 0 {
+		slog.Warn("stderr", "output", string(dataErr))
 	}
 }

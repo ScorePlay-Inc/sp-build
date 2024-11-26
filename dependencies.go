@@ -12,9 +12,9 @@ import (
 func golangModuleName(ctx context.Context) (string, error) {
 	cmd := exec.CommandContext(ctx, "go", "mod", "edit", "--json")
 
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("exec.Command error: %w", err)
+		return "", fmt.Errorf("cmd.CombinedOutput error (%w): %s", err, string(output))
 	}
 
 	var module struct {
