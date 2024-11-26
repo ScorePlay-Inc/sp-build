@@ -15,12 +15,12 @@ func initServicesListCommand() *cobra.Command {
 		Use:   "list",
 		Short: "command to list all services in the monorepo",
 		Run: func(cmd *cobra.Command, args []string) {
-			services, err := ServicesList(cmd.Context(), *goModDir)
+			services, err := servicesList(cmd.Context(), *goModDir)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			DisplayMap(services, *displayJSON)
+			displayMap(services, *displayJSON)
 		},
 	}
 

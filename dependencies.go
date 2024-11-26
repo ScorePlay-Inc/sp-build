@@ -38,7 +38,7 @@ func modifiedFilesSinceLastCommit(ctx context.Context) ([]string, error) {
 	return strings.Split(strings.TrimSpace(string(modifiedFiles)), "\n"), nil
 }
 
-func ModifiedPackages(ctx context.Context, goModDir string, onlyServices bool) ([]string, error) {
+func modifiedPackages(ctx context.Context, goModDir string, onlyServices bool) ([]string, error) {
 	moduleName, err := golangModuleName(ctx, goModDir)
 	if err != nil {
 		return nil, fmt.Errorf("golangModuleName error %w", err)
@@ -54,13 +54,6 @@ func ModifiedPackages(ctx context.Context, goModDir string, onlyServices bool) (
 		return nil, fmt.Errorf("getReverseDependencies error %w", err)
 	}
 
-	for pkg, deps := range revDeps {
-		fmt.Println(pkg)
-		for _, dep := range deps {
-			fmt.Println("\t", dep)
-		}
-	}
-
 	toBuild := make(map[string]bool)
 	for _, file := range modifiedFiles {
 		if strings.HasPrefix(file, "vendor/") {
@@ -69,21 +62,24 @@ func ModifiedPackages(ctx context.Context, goModDir string, onlyServices bool) (
 			file = path.Join(moduleName, path.Dir(file))
 		}
 
-		for _, service := range revDeps[file] {
-			toBuild[service] = true
+		for _, pkg := range revDeps[file] {
+			toBuild[pkg] = true
 		}
 	}
 
-	serviceList := make([]string, 0)
+	packageList := make([]string, 0)
 	for service := range toBuild {
 		serviceName := strings.TrimPrefix(service, moduleName)
+		if serviceName == "" {
+			continue
+		}
 
-		serviceList = append(serviceList, serviceName)
+		packageList = append(packageList, serviceName)
 	}
-	return serviceList, nil
+	return packageList, nil
 }
 
-func ServicesList(ctx context.Context, goModDir string) (map[string]string, error) {
+func servicesList(ctx context.Context, goModDir string) (map[string]string, error) {
 	goModuleName, err := golangModuleName(ctx, goModDir)
 	if err != nil {
 		return nil, fmt.Errorf("golangModuleName error %w", err)

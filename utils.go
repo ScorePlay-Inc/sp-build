@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func DisplayList(list []string, asJson bool) {
+func displayList(list []string, asJson bool) {
 	if asJson {
 		data, _ := json.Marshal(&list)
 		fmt.Println(string(data))
@@ -16,7 +16,7 @@ func DisplayList(list []string, asJson bool) {
 	}
 }
 
-func DisplayMap(m map[string]string, asJson bool) {
+func displayMap(m map[string]string, asJson bool) {
 	if asJson {
 		data, _ := json.Marshal(&m)
 		fmt.Println(string(data))

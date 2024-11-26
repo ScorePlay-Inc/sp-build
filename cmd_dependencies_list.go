@@ -17,12 +17,12 @@ func initDependenciesListCommand() *cobra.Command {
 		Short: "List all software that needs to be rebuilt or tested.",
 		Long:  "Check all modified files from last commit and output the packages that needs to be rebuilt or tested.",
 		Run: func(cmd *cobra.Command, args []string) {
-			list, err := ModifiedPackages(cmd.Context(), *goModDir, *services)
+			list, err := modifiedPackages(cmd.Context(), *goModDir, *services)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			DisplayList(list, *displayJSON)
+			displayList(list, *displayJSON)
 		},
 	}
 

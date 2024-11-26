@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
@@ -18,11 +15,4 @@ func initRootCommand(version string) *cobra.Command {
 	cmd.AddCommand(initServicesCommand())
 	cmd.AddCommand(initVersionCommand(version))
 	return cmd
-}
-
-func Execute(version string) {
-	if err := initRootCommand(version).Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 }
