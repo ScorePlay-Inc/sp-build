@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -e -u -f -o pipefail
-
 packages=$(/sp-build dependencies list --json)
 services=$(/sp-build dependencies list --services --json)
 
