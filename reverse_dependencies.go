@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"os/exec"
 	"path"
 	"strings"
 )
@@ -18,7 +17,10 @@ type jsonPackage struct {
 }
 
 func getServicesList(ctx context.Context, goModuleName string) (map[string]string, error) {
-	cmd := exec.CommandContext(ctx, "go", "list", "-json", "./...")
+	cmd, err := commandContext(ctx, "go", "list", "-json", "./...")
+	if err != nil {
+		return nil, fmt.Errorf("commandContext error: %w", err)
+	}
 
 	stdOut, err := cmd.StdoutPipe()
 	if err != nil {
@@ -61,7 +63,10 @@ func getServicesList(ctx context.Context, goModuleName string) (map[string]strin
 
 // getReverseDependencies gets all the executable (package main) dependencies of every package in the repo.
 func getReverseDependencies(ctx context.Context, onlyServices bool) (map[string][]string, error) {
-	cmd := exec.CommandContext(ctx, "go", "list", "-json", "./...")
+	cmd, err := commandContext(ctx, "go", "list", "-json", "./...")
+	if err != nil {
+		return nil, fmt.Errorf("commandContext error: %w", err)
+	}
 
 	stdOut, err := cmd.StdoutPipe()
 	if err != nil {

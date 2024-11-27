@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"path"
 	"strings"
 )
 
 func golangModuleName(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "go", "mod", "edit", "--json")
+	cmd, err := commandContext(ctx, "go", "mod", "edit", "--json")
+	if err != nil {
+		return "", fmt.Errorf("commandContext error: %w", err)
+	}
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -30,7 +32,12 @@ func golangModuleName(ctx context.Context) (string, error) {
 }
 
 func modifiedFilesSinceLastCommit(ctx context.Context) ([]string, error) {
-	modifiedFiles, err := exec.CommandContext(ctx, "git", "diff", "--relative", "--name-only", "@^").Output()
+	cmd, err := commandContext(ctx, "git", "diff", "--relative", "--name-only", "@^")
+	if err != nil {
+		return nil, fmt.Errorf("commandContext error: %w", err)
+	}
+
+	modifiedFiles, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("exec.Command error: %w", err)
 	}
