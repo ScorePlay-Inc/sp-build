@@ -58,7 +58,7 @@ func modifiedFilesSinceLastCommit(ctx context.Context, workingDirectory string) 
 		slog.String("status", strings.Join(status, " ")),
 	)
 
-	cmd, err := commandContext(ctx, workingDirectory, "git", "diff", "--relative", "--name-only", "@^")
+	cmd, err := commandContext(ctx, workingDirectory, "git", "diff", "--relative", "--name-only", "origin/main")
 	if err != nil {
 		return nil, fmt.Errorf("commandContext error: %w", err)
 	}
