@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -16,7 +16,7 @@ func initServicesListCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			services, err := servicesList(cmd.Context())
 			if err != nil {
-				fmt.Println(err)
+				slog.Error("sp-build failed", slog.String("error", err.Error()))
 				os.Exit(1)
 			}
 			displayMap(services, *displayJSON)

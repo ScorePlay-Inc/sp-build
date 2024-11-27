@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 )
@@ -13,7 +12,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	if err := initRootCommand(version).Execute(); err != nil {
-		fmt.Println(err)
+		slog.Error("sp-build failed", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 }
