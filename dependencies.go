@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"path"
 	"strings"
 )
@@ -28,7 +29,10 @@ func golangModuleName(ctx context.Context, workingDirectory string) (string, err
 	if err := json.Unmarshal(output, &module); err != nil {
 		return "", fmt.Errorf("json.Unmarshal error: %w", err)
 	}
-	return module.Module.Path, nil
+
+	name := module.Module.Path
+	slog.InfoContext(ctx, "fetching golang module name", slog.String("name", name))
+	return name, nil
 }
 
 func modifiedFilesSinceLastCommit(ctx context.Context, workingDirectory string) ([]string, error) {
@@ -37,11 +41,18 @@ func modifiedFilesSinceLastCommit(ctx context.Context, workingDirectory string) 
 		return nil, fmt.Errorf("commandContext error: %w", err)
 	}
 
-	modifiedFiles, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("exec.Command error: %w", err)
+		return nil, fmt.Errorf("cmd.CombinedOutput error (%w): %s", err, string(output))
 	}
-	return strings.Split(strings.TrimSpace(string(modifiedFiles)), "\n"), nil
+
+	files := strings.Split(strings.TrimSpace(string(output)), "\n")
+	slog.InfoContext(ctx, "fetching modified files",
+		slog.String("files", strings.Join(files, ", ")),
+		slog.Int("count", len(files)),
+	)
+
+	return files, nil
 }
 
 func modifiedPackages(ctx context.Context, workingDirectory string, onlyServices bool) ([]string, error) {
