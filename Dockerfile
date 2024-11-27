@@ -9,4 +9,4 @@ COPY entrypoint.sh /
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /sp-build
 
-CMD ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
