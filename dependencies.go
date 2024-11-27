@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os/exec"
 	"path"
 	"strings"
 )
@@ -36,6 +37,16 @@ func golangModuleName(ctx context.Context, workingDirectory string) (string, err
 }
 
 func modifiedFilesSinceLastCommit(ctx context.Context, workingDirectory string) ([]string, error) {
+	listing, err := exec.CommandContext(ctx, "ls", "-a").Output()
+	if err != nil {
+		return nil, fmt.Errorf("ls -la error: %w", err)
+	}
+
+	content := strings.Split(strings.TrimSpace(string(listing)), "\n")
+	slog.InfoContext(ctx, "listing root directory content",
+		slog.String("listing", strings.Join(content, " ")),
+	)
+
 	cmd, err := commandContext(ctx, workingDirectory, "git", "diff", "--relative", "--name-only", "@^")
 	if err != nil {
 		return nil, fmt.Errorf("commandContext error: %w", err)
