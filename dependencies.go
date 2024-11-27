@@ -47,6 +47,16 @@ func modifiedFilesSinceLastCommit(ctx context.Context, workingDirectory string) 
 		slog.String("listing", strings.Join(content, " ")),
 	)
 
+	gitStatus, err := exec.CommandContext(ctx, "git", "status", "--porcelain").Output()
+	if err != nil {
+		return nil, fmt.Errorf("git status error: %w", err)
+	}
+
+	status := strings.Split(strings.TrimSpace(string(gitStatus)), "\n")
+	slog.InfoContext(ctx, "fetching status of the repository",
+		slog.String("status", strings.Join(status, " ")),
+	)
+
 	cmd, err := commandContext(ctx, workingDirectory, "git", "diff", "--relative", "--name-only", "@^")
 	if err != nil {
 		return nil, fmt.Errorf("commandContext error: %w", err)
