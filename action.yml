@@ -1,5 +1,10 @@
 name: 'SPBuild'
 description: 'ScorePlay tooling for GoLang repositories'
+inputs:
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
 outputs:
   packages:
     description: 'List of modified packages'
@@ -8,3 +13,5 @@ outputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
+  args:
+    - ${{ inputs.working-directory }}
