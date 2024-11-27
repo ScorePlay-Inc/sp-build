@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-func golangModuleName(ctx context.Context) (string, error) {
-	cmd, err := commandContext(ctx, "go", "mod", "edit", "--json")
+func golangModuleName(ctx context.Context, workingDirectory string) (string, error) {
+	cmd, err := commandContext(ctx, workingDirectory, "go", "mod", "edit", "--json")
 	if err != nil {
 		return "", fmt.Errorf("commandContext error: %w", err)
 	}
@@ -31,8 +31,8 @@ func golangModuleName(ctx context.Context) (string, error) {
 	return module.Module.Path, nil
 }
 
-func modifiedFilesSinceLastCommit(ctx context.Context) ([]string, error) {
-	cmd, err := commandContext(ctx, "git", "diff", "--relative", "--name-only", "@^")
+func modifiedFilesSinceLastCommit(ctx context.Context, workingDirectory string) ([]string, error) {
+	cmd, err := commandContext(ctx, workingDirectory, "git", "diff", "--relative", "--name-only", "@^")
 	if err != nil {
 		return nil, fmt.Errorf("commandContext error: %w", err)
 	}
@@ -44,18 +44,18 @@ func modifiedFilesSinceLastCommit(ctx context.Context) ([]string, error) {
 	return strings.Split(strings.TrimSpace(string(modifiedFiles)), "\n"), nil
 }
 
-func modifiedPackages(ctx context.Context, onlyServices bool) ([]string, error) {
-	moduleName, err := golangModuleName(ctx)
+func modifiedPackages(ctx context.Context, workingDirectory string, onlyServices bool) ([]string, error) {
+	moduleName, err := golangModuleName(ctx, workingDirectory)
 	if err != nil {
 		return nil, fmt.Errorf("golangModuleName error %w", err)
 	}
 
-	modifiedFiles, err := modifiedFilesSinceLastCommit(ctx)
+	modifiedFiles, err := modifiedFilesSinceLastCommit(ctx, workingDirectory)
 	if err != nil {
 		return nil, fmt.Errorf("modifiedFilesSinceLastCommit error %w", err)
 	}
 
-	revDeps, err := getReverseDependencies(ctx, onlyServices)
+	revDeps, err := getReverseDependencies(ctx, workingDirectory, onlyServices)
 	if err != nil {
 		return nil, fmt.Errorf("getReverseDependencies error %w", err)
 	}
@@ -71,23 +71,23 @@ func modifiedPackages(ctx context.Context, onlyServices bool) ([]string, error) 
 
 	packageList := make([]string, 0)
 	for pkg := range modified {
-		pkgName := strings.TrimPrefix(pkg, moduleName)
-		if pkgName == "" {
+		pkgPath := strings.TrimPrefix(pkg, moduleName)
+		if pkgPath == "" {
 			continue
 		}
 
-		packageList = append(packageList, "."+pkgName)
+		packageList = append(packageList, "."+pkgPath)
 	}
 	return packageList, nil
 }
 
-func servicesList(ctx context.Context) (map[string]string, error) {
-	goModuleName, err := golangModuleName(ctx)
+func servicesList(ctx context.Context, workingDirectory string) (map[string]string, error) {
+	goModuleName, err := golangModuleName(ctx, workingDirectory)
 	if err != nil {
 		return nil, fmt.Errorf("golangModuleName error %w", err)
 	}
 
-	services, err := getServicesList(ctx, goModuleName)
+	services, err := getServicesList(ctx, workingDirectory, goModuleName)
 	if err != nil {
 		return nil, fmt.Errorf("getServicesList error: %w", err)
 	}

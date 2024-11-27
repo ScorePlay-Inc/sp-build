@@ -16,8 +16,8 @@ type jsonPackage struct {
 	Deps       []string
 }
 
-func getServicesList(ctx context.Context, goModuleName string) (map[string]string, error) {
-	cmd, err := commandContext(ctx, "go", "list", "-json", "./...")
+func getServicesList(ctx context.Context, workingDirectory, goModuleName string) (map[string]string, error) {
+	cmd, err := commandContext(ctx, workingDirectory, "go", "list", "-json", "./...")
 	if err != nil {
 		return nil, fmt.Errorf("commandContext error: %w", err)
 	}
@@ -62,8 +62,8 @@ func getServicesList(ctx context.Context, goModuleName string) (map[string]strin
 }
 
 // getReverseDependencies gets all the executable (package main) dependencies of every package in the repo.
-func getReverseDependencies(ctx context.Context, onlyServices bool) (map[string][]string, error) {
-	cmd, err := commandContext(ctx, "go", "list", "-json", "./...")
+func getReverseDependencies(ctx context.Context, workingDirectory string, onlyServices bool) (map[string][]string, error) {
+	cmd, err := commandContext(ctx, workingDirectory, "go", "list", "-json", "./...")
 	if err != nil {
 		return nil, fmt.Errorf("commandContext error: %w", err)
 	}
